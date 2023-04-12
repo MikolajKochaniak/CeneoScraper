@@ -1,7 +1,17 @@
 import requests
 from bs4 import BeautifulSoup
-def get_cos(ancestor,selector):
-    return ancestor.select_one(selector).text.strip()
+import json
+def get_element(ancestor,selector=None, attribute = None, return_list=False):
+    try:
+        if return_list:
+            return [tag.text.strip() for tag in ancestor.select(selector)]
+        if not selector and attribute:
+            return ancestor[attribute]
+        if attribute:
+            return ancestor.select_one(selector)[attribute].strip()
+        return ancestor.select_one(selector).text.strip()
+    except (ArithmeticError,TypeError):
+        return None
 #product_code = input("Podaj kod produktu: ")
 product_code = "22409122"
 url = f"https://www.ceneo.pl/{product_code}#tab=reviews"
@@ -11,29 +21,27 @@ opinions = page_dom.select("div.js_product-review")
 all_opinions = []
 for opinion in opinions:
     single_opinion = {
-        "opinion_id":opinion["data-entry-id"],
-        "author":opinion.select_one("span.user-post__author-name").text.strip(),
-        "recommendation":opinion.select_one("span.user-post__author-recomendation").text.strip(),
-        "stars":opinion.select_one("span.user-post__score-count").text.strip(),
-        "purchased":opinion.select_one("div.review-pz").text.strip(),
-        "opinion_date":opinion.select_one("span.user-post__published > time:nth-child(1)")["datatime"].strip(),
-        "purchase_date":opinion.select_one("span.user-post__published > time:nth-child(2)")["datatime"].strip(),
-        "useful":opinion.select_one("button.vote-yes")["data-total-vote"].strip(),
-        "unuseful":opinion.select_one("button.vote-no")["data-total-vote"].strip(),
-        "content":opinion.select_one("div user-post__text").text.strip(),
-        "cons":[cons.text.strip() for cons in opinion.select("div.review-feature__title--negatives ~ div.review-feature__item").text.strip()],
-        "pros":[cons.text.strip() for pros in opinion.select("div.review-feature__title--negatives ~ div.review-feature__item").text.strip()],
+        "opinion_id":[None,"data-entry-id"],
+        "author":["span.user-post__author-name"],
+        "recommendation":["span.user-post__author-recomendation > em"],
+        "stars":["span.user-post__score-count"],
+        "purchased":["div.review-pz"],
+        "opinion_date":["span.user-post__published > time:nth-child(1)","datetime"],
+        "purchase_date":["span.user-post__published > time:nth-child(2)","datetime"],
+        "useful":["button.vote-yes","data-total-vote"],
+        "unuseful":["button.vote-no","data-total-vote"],
+        "content":["div.user-post__text"],
+        "cons": ["div.review-feature__title--negatives ~ div.review-feature__item",None,True],
+        "pros": ["div.review-feature__title--negatives ~ div.review-feature__item",None,True],
 
 
     }
-    all.opinions.append()
-print(all_opinions)
+    all_opinions.append(single_opinion)
+
+with open("./opinion/{product_code}.json", "w", encoding = "UTF-8") as jf:
+    print(json.dumps(all_opinions,indent=4, ensure_ascii=False))
     
 
-print(type(page_dom))
-print(type(opinions))
-print(len(opinions))
-#span.user-post__score-counte
 
 
 
